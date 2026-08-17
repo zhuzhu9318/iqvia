@@ -37,7 +37,7 @@ export function normaliseRows(rows: SourceRow[], columns: DetectedColumn[]) {
       const metric = column.role.replace("_metric", "") as "sales" | "units" | "cu" | "du";
       const metricKey = metric === "sales" ? "value" : metric;
       const parsed = number(row[column.sourceColumn]);
-      if (parsed !== undefined) observation[metricKey] = parsed;
+      if (parsed !== undefined) observation[metricKey] = (observation[metricKey] ?? 0) + parsed;
       observations.set(observationKey, observation);
     }
   }

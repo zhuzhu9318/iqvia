@@ -68,13 +68,16 @@ export async function loadSetup(datasetId: string) {
   };
 }
 
-export async function savePortfolio(datasetId: string, corporation: string) {
+export async function savePortfolio(datasetId: string, productIds: string[]) {
   const db = createClient();
   const { error: clearError } = await db.from("products").update({ is_portfolio: false }).eq("dataset_id", datasetId);
   if (clearError) throw clearError;
-  const { error } = await db.from("products").update({ is_portfolio: true }).eq("dataset_id", datasetId).eq("corporation", corporation);
+  const { error } = productIds.length ? await db.from("products").update({ is_portfolio: true }).eq("dataset_id", datasetId).in("id", productIds) : {error:null};
   if (error) throw error;
 }
+
+export async function createCategory(datasetId:string) { const {data,error}=await createClient().from("categories").insert({dataset_id:datasetId,name:"New comparison group",description:"User-created category",source:"user",confidence:1,review_status:"unreviewed"}).select("id,name,description").single(); if(error)throw error; return data as SetupCategory; }
+export async function deleteCategory(datasetId:string,categoryId:string) { const {error}=await createClient().from("categories").delete().eq("dataset_id",datasetId).eq("id",categoryId); if(error)throw error; }
 
 export async function saveCategories(datasetId: string, categories: SetupCategory[], ingredients: SetupIngredient[]) {
   const db = createClient();

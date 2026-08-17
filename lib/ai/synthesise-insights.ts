@@ -1,0 +1,15 @@
+import type { AnalyticsResult } from "@/lib/analytics/engine";
+
+export type GroundedInsight = { type:"opportunity"|"threat"|"trend"; signal:"PENETRATE"|"DEFEND"|"INVEST"|"MONITOR"; summary:string; interpretation:string; investigation:string; confidence:number; evidence:Record<string,string|number|null> };
+const percent=(value:number|null)=>value==null?"N/A":`${value>=0?"+":""}${(value*100).toFixed(1)}%`;
+
+export function synthesiseInsights(data:AnalyticsResult):GroundedInsight[] {
+  const insights:GroundedInsight[]=[];
+  for(const category of data.categories.slice(0,3)) {
+    const signal=category.portfolioShare<.15?"PENETRATE":category.growth!=null&&category.growth>0?"INVEST":"MONITOR";
+    insights.push({type:"opportunity",signal,summary:`${category.name} ranks #${category.rank} for opportunity with ${(category.portfolioShare*100).toFixed(1)}% portfolio penetration.`,interpretation:category.portfolioShare<.15?"The engine finds a sizeable penetration gap inside an attractive comparison group.":"Existing portfolio exposure may benefit from the category's current market position.",investigation:`Validate channel-level demand and product fit in ${category.name} before changing commercial priorities.`,confidence:.9,evidence:{dataset_period:data.latestPeriod,category_id:category.id,market_value:category.value,qoq_growth:category.growth,portfolio_share:category.portfolioShare,attractiveness_score:category.attractiveness,penetration_gap:category.penetrationGap,opportunity_score:category.opportunityScore}});
+  }
+  for(const threat of data.threats.filter((item)=>item.level!=="Watch").slice(0,2)) insights.push({type:"threat",signal:"DEFEND",summary:`${threat.corporation} holds ${(threat.share*100).toFixed(1)}% of ${threat.category} and changed share by ${threat.shareChange==null?"N/A":`${(threat.shareChange*100).toFixed(1)} pp`}.`,interpretation:"A competitor gaining position in a category containing portfolio products warrants focused review; the pattern does not establish causation.",investigation:`Review ${threat.corporation}'s product and channel mix in ${threat.category}.`,confidence:.86,evidence:{dataset_period:data.latestPeriod,category_id:threat.categoryId,competitor:threat.corporation,competitor_value:threat.value,competitor_share:threat.share,competitor_growth:threat.growth,share_change_pp:threat.shareChange==null?null:threat.shareChange*100}});
+  if(data.qoq!=null) insights.push({type:"trend",signal:data.qoq>=0?"INVEST":"MONITOR",summary:`The total market moved ${percent(data.qoq)} quarter over quarter to ${data.totalValue.toFixed(0)}.`,interpretation:"This describes the latest comparable market movement and should be read with category-level dispersion.",investigation:"Inspect category and company contributors before attributing the market movement.",confidence:.96,evidence:{dataset_period:data.latestPeriod,comparison_period:data.previousPeriod,latest_market_value:data.totalValue,previous_market_value:data.previousValue,qoq_growth:data.qoq}});
+  return insights;
+}
