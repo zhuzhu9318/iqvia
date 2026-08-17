@@ -6,6 +6,7 @@ import { COLUMN_ROLES, detectSchema, type DetectedColumn } from "@/lib/parsing/s
 import { createDataset, listDatasets, saveMappings, type DatasetSummary } from "@/lib/data/datasets";
 import { normaliseDataset } from "@/lib/data/normalise";
 import { SetupWorkflow } from "./setup-workflow";
+import { MarketDashboard } from "./market-dashboard";
 
 type Row = Record<string, string | number | boolean | null>;
 
@@ -74,8 +75,8 @@ export function UploadWorkflow() {
       <div className="table-wrap"><table><thead><tr><th>Source column</th><th>Detected role</th><th>Confidence</th><th>Status</th></tr></thead><tbody>{columns.map((column, index) => <tr key={column.sourceColumn}><td className="font-semibold">{column.sourceColumn}<div className="text-[11px] font-normal text-[var(--muted)] mt-1">{rows.slice(0,2).map(r => String(r[column.sourceColumn] ?? "—")).join(" · ")}</div></td><td><select className="input min-w-44" value={column.role} onChange={(e) => setColumns((current) => current.map((c,i) => i === index ? {...c, role: e.target.value as DetectedColumn["role"], confidence: 1} : c))}>{COLUMN_ROLES.map(role => <option key={role} value={role}>{role.replaceAll("_", " ")}</option>)}</select></td><td>{Math.round(column.confidence * 100)}%</td><td><span className={`status-pill ${column.confidence >= .85 ? "status-good" : "status-warn"}`}>{column.confidence >= .85 ? "Confident" : "Review"}</span></td></tr>)}</tbody></table></div>
     </section>}
 
-    {dataset && normalised && <SetupWorkflow datasetId={dataset.id} onComplete={() => setSetupComplete(true)}/>} 
-    {setupComplete && <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-5 text-sm text-emerald-900"><strong>Market definition complete.</strong> Deterministic analytics are ready to compute.</div>}
+    {dataset && normalised && !setupComplete && <SetupWorkflow datasetId={dataset.id} onComplete={() => setSetupComplete(true)}/>}
+    {setupComplete && dataset && <MarketDashboard datasetId={dataset.id}/>}
 
     <section className="card p-6"><div className="flex justify-between items-center"><div><div className="eyebrow">Recent datasets</div><h2 className="text-xl font-semibold mt-1">Analysis workspace</h2></div><span className="text-xs text-[var(--muted)]">{history.length} total</span></div><div className="mt-4 divide-y divide-[var(--line)]">{history.slice(0,5).map(item => <div key={item.id} className="py-3 flex flex-wrap justify-between gap-3"><div><div className="font-semibold text-sm">{item.filename}</div><div className="text-xs text-[var(--muted)] mt-1">{item.row_count.toLocaleString()} rows · {item.column_count} columns</div></div><span className="status-pill status-good">{item.status}</span></div>)}</div></section>
   </div>;
