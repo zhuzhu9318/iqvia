@@ -1,21 +1,6 @@
+import { Sidebar } from "@/components/sidebar";
+import { UploadWorkflow } from "@/components/upload-workflow";
+
 export default function Home() {
-  return (
-    <main className="min-h-screen flex items-center justify-center p-8">
-      <div className="max-w-xl text-center space-y-4">
-        <h1 className="text-4xl font-bold tracking-tight">vibe-stack-supabase</h1>
-        <p className="text-neutral-500">
-          Edit{" "}
-          <code className="bg-neutral-100 px-1.5 py-0.5 rounded text-sm">
-            app/page.tsx
-          </code>{" "}
-          to start building.
-        </p>
-        <p className="text-xs text-neutral-400">
-          See{" "}
-          <code className="bg-neutral-100 px-1.5 py-0.5 rounded">CLAUDE.md</code>{" "}
-          for project conventions and gstack workflow.
-        </p>
-      </div>
-    </main>
-  );
+  return <div className="app-shell"><Sidebar/><main className="main-content"><div className="eyebrow">Market intelligence workspace</div><h1 className="page-title">From raw workbook<br/>to market clarity.</h1><p className="lede">Upload an unfamiliar IQVIA export, confirm what each field means, and move directly into normalized, evidence-backed analysis.</p><UploadWorkflow/></main></div>;
 }
