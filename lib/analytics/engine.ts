@@ -1,8 +1,8 @@
-export type AnalyticsRow = { productId: string; product: string; corporation: string; channel: string; categoryId: string; category: string; isPortfolio: boolean; period: string; value: number };
+export type AnalyticsRow = { productId: string; product: string; ingredient:string; corporation: string; channel: string; categoryId: string; category: string; isPortfolio: boolean; period: string; value: number };
 export type RankedMetric = { name: string; value: number; share: number; growth: number | null; shareChange: number | null; rank: number };
 export type CategoryMetric = RankedMetric & { id: string; portfolioValue: number; portfolioShare: number; attractiveness: number; penetrationGap: number; opportunityScore: number; growthContribution: number | null };
 export type CompetitiveSignal = { categoryId:string; category:string; corporation:string; value:number; share:number; growth:number|null; shareChange:number|null; level:"High"|"Medium"|"Watch" };
-export type AnalyticsResult = { latestPeriod: string; previousPeriod: string | null; yoyPeriod: string | null; totalValue: number; previousValue: number; qoq: number | null; yoy: number | null; portfolioValue: number; portfolioShare: number; trend: Array<{ period: string; value: number; portfolio: number }>; categories: CategoryMetric[]; products: RankedMetric[]; corporations: RankedMetric[]; channels: RankedMetric[]; threats:CompetitiveSignal[] };
+export type AnalyticsResult = { latestPeriod: string; previousPeriod: string | null; yoyPeriod: string | null; totalValue: number; previousValue: number; qoq: number | null; yoy: number | null; portfolioValue: number; portfolioShare: number; trend: Array<{ period: string; value: number; portfolio: number }>; categories: CategoryMetric[]; ingredients:RankedMetric[]; products: RankedMetric[]; corporations: RankedMetric[]; channels: RankedMetric[]; threats:CompetitiveSignal[] };
 
 export function periodIndex(period: string) {
   const match = period.match(/Q([1-4])[- ]?(20\d{2})/i) ?? period.match(/(20\d{2})[- ]?Q([1-4])/i);
@@ -23,7 +23,7 @@ export function computeAnalytics(rows: AnalyticsRow[]): AnalyticsResult {
   const periodValue = (period: string | null, filter: (row: AnalyticsRow) => boolean = () => true) => period ? sum(rows.filter((row) => row.period === period && filter(row)).map((row) => row.value)) : 0;
   const totalValue = periodValue(latestPeriod); const previousValue = periodValue(previousPeriod); const yoyValue = periodValue(yoyPeriod);
   const portfolioValue = periodValue(latestPeriod, (row) => row.isPortfolio);
-  const ranked = (key: "product" | "corporation" | "channel"): RankedMetric[] => {
+  const ranked = (key: "ingredient" | "product" | "corporation" | "channel"): RankedMetric[] => {
     const names = [...new Set(rows.map((row) => row[key]).filter(Boolean))];
     return names.map((name) => {
       const current = periodValue(latestPeriod, (row) => row[key] === name); const prior = periodValue(previousPeriod, (row) => row[key] === name);
@@ -48,5 +48,5 @@ export function computeAnalytics(rows: AnalyticsRow[]): AnalyticsResult {
     return companies.map((corporation)=>{ const current=periodValue(latestPeriod,(row)=>row.categoryId===category.id&&row.corporation===corporation); const prior=periodValue(previousPeriod,(row)=>row.categoryId===category.id&&row.corporation===corporation); const share=categoryCurrent?current/categoryCurrent:0; const priorShare=categoryPrior?prior/categoryPrior:0; const shareChange=previousPeriod?share-priorShare:null; const growth=ratio(current,prior); const strength=(shareChange??0)+(growth??0)*.2; return {categoryId:category.id,category:category.name,corporation,value:current,share,growth,shareChange,level:strength>.04?"High":strength>.01?"Medium":"Watch"} as CompetitiveSignal; });
   }).sort((a,b)=>(b.shareChange??-1)-(a.shareChange??-1));
   return { latestPeriod, previousPeriod, yoyPeriod, totalValue, previousValue, qoq: ratio(totalValue, previousValue), yoy: ratio(totalValue, yoyValue), portfolioValue, portfolioShare: totalValue ? portfolioValue/totalValue : 0,
-    trend: periods.map((period) => ({period,value:periodValue(period),portfolio:periodValue(period,(row)=>row.isPortfolio)})), categories, products:ranked("product"), corporations:ranked("corporation"), channels:ranked("channel"), threats };
+    trend: periods.map((period) => ({period,value:periodValue(period),portfolio:periodValue(period,(row)=>row.isPortfolio)})), categories, ingredients:ranked("ingredient"), products:ranked("product"), corporations:ranked("corporation"), channels:ranked("channel"), threats };
 }

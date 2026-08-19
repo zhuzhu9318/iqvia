@@ -3,13 +3,13 @@ import { computeAnalytics, type AnalyticsRow } from "@/lib/analytics/engine";
 
 export async function loadAnalytics(datasetId: string) {
   const db = createClient();
-  const { data, error } = await db.from("sales_observations").select("period,value,products!inner(id,name,corporation,channel,is_portfolio,ingredient_id,category_mappings:ingredients!inner(category_mappings!inner(categories!inner(id,name))))").eq("dataset_id", datasetId);
+  const { data, error } = await db.from("sales_observations").select("period,value,products!inner(id,name,corporation,channel,is_portfolio,ingredient:ingredients!inner(name,category_mappings!inner(categories!inner(id,name))))").eq("dataset_id", datasetId);
   if (error) throw error;
   const rows: AnalyticsRow[] = [];
   for (const observation of data ?? []) {
-    const product = observation.products as unknown as { id:string;name:string;corporation:string|null;channel:string|null;is_portfolio:boolean;category_mappings:{category_mappings:Array<{categories:{id:string;name:string}}>} };
-    const mappings = product.category_mappings?.category_mappings ?? [];
-    for (const mapping of mappings) rows.push({ productId:product.id, product:product.name, corporation:product.corporation ?? "Unknown", channel:product.channel ?? "Unspecified", categoryId:mapping.categories.id, category:mapping.categories.name, isPortfolio:product.is_portfolio, period:observation.period, value:Number(observation.value ?? 0) });
+    const product = observation.products as unknown as { id:string;name:string;corporation:string|null;channel:string|null;is_portfolio:boolean;ingredient:{name:string;category_mappings:Array<{categories:{id:string;name:string}}>} };
+    const mappings = product.ingredient?.category_mappings ?? [];
+    for (const mapping of mappings) rows.push({ productId:product.id, product:product.name, ingredient:product.ingredient.name, corporation:product.corporation ?? "Unknown", channel:product.channel ?? "Unspecified", categoryId:mapping.categories.id, category:mapping.categories.name, isPortfolio:product.is_portfolio, period:observation.period, value:Number(observation.value ?? 0) });
   }
   return computeAnalytics(rows);
 }

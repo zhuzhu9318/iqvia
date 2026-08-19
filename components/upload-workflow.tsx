@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import * as XLSX from "xlsx";
 import { COLUMN_ROLES, detectSchema, type DetectedColumn } from "@/lib/parsing/schema";
-import { createDataset, listDatasets, saveMappings, type DatasetSummary } from "@/lib/data/datasets";
+import { createDataset, deleteDataset, listDatasets, saveMappings, type DatasetSummary } from "@/lib/data/datasets";
 import { normaliseDataset } from "@/lib/data/normalise";
 import { SetupWorkflow } from "./setup-workflow";
 import { MarketDashboard } from "./market-dashboard";
@@ -19,6 +19,7 @@ export function UploadWorkflow() {
   const [busy, setBusy] = useState(false);
   const [normalised, setNormalised] = useState(false);
   const [setupComplete, setSetupComplete] = useState(false);
+  const [selectedDataset,setSelectedDataset]=useState<DatasetSummary>();
   const [message, setMessage] = useState("");
   const criticalReady = useMemo(() => ["product_name", "ingredient"].every((role) => columns.some((c) => c.role === role)), [columns]);
 
@@ -78,7 +79,9 @@ export function UploadWorkflow() {
     {dataset && normalised && !setupComplete && <SetupWorkflow datasetId={dataset.id} onComplete={() => setSetupComplete(true)}/>}
     {setupComplete && dataset && <MarketDashboard datasetId={dataset.id}/>}
 
-    <section className="card p-6"><div className="flex justify-between items-center"><div><div className="eyebrow">Recent datasets</div><h2 className="text-xl font-semibold mt-1">Analysis workspace</h2></div><span className="text-xs text-[var(--muted)]">{history.length} total</span></div><div className="mt-4 divide-y divide-[var(--line)]">{history.slice(0,5).map(item => <div key={item.id} className="py-3 flex flex-wrap justify-between gap-3"><div><div className="font-semibold text-sm">{item.filename}</div><div className="text-xs text-[var(--muted)] mt-1">{item.row_count.toLocaleString()} rows · {item.column_count} columns</div></div><span className="status-pill status-good">{item.status}</span></div>)}</div></section>
+    <section className="card p-6"><div className="flex justify-between items-center"><div><div className="eyebrow">Recent datasets</div><h2 className="text-xl font-semibold mt-1">Analysis workspace</h2></div><span className="text-xs text-[var(--muted)]">{history.length} total</span></div><div className="mt-4 divide-y divide-[var(--line)]">{history.slice(0,8).map(item => <div key={item.id} className="py-3 flex flex-wrap justify-between gap-3"><div><div className="font-semibold text-sm">{item.filename}</div><div className="text-xs text-[var(--muted)] mt-1">{item.row_count.toLocaleString()} rows · {item.column_count} columns</div></div><div className="flex items-center gap-2"><span className="status-pill status-good">{item.status}</span>{["normalised","analysed"].includes(item.status)&&<button className="btn-secondary text-xs" onClick={()=>setSelectedDataset(item)}>Open</button>}<button className="btn-secondary text-xs text-red-700" onClick={async()=>{if(!window.confirm(`Delete ${item.filename} and all derived analysis?`))return;try{await deleteDataset(item.id);setHistory(await listDatasets());if(selectedDataset?.id===item.id)setSelectedDataset(undefined);}catch(e){setMessage(e instanceof Error?e.message:"Delete failed");}}}>Delete</button></div></div>)}</div></section>
+    {selectedDataset?.status==="normalised"&&<SetupWorkflow datasetId={selectedDataset.id} onComplete={()=>setSelectedDataset({...selectedDataset,status:"analysed"})}/>}
+    {selectedDataset?.status==="analysed"&&<MarketDashboard datasetId={selectedDataset.id} title={selectedDataset.filename}/>}
   </div>;
 }
 

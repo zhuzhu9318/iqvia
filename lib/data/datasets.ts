@@ -35,3 +35,8 @@ export async function saveMappings(datasetId: string, columns: DetectedColumn[])
     if (error) throw error;
   }
 }
+
+export async function deleteDataset(datasetId: string) {
+  const { error } = await createClient().from("datasets").delete().eq("id", datasetId);
+  if (error) throw error;
+}
