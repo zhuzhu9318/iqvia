@@ -1,6 +1,6 @@
 import type { AnalyticsResult } from "@/lib/analytics/engine";
 
-export type GroundedInsight = { type:"opportunity"|"threat"|"trend"; signal:"PENETRATE"|"DEFEND"|"INVEST"|"MONITOR"; summary:string; interpretation:string; investigation:string; confidence:number; evidence:Record<string,string|number|null> };
+export type GroundedInsight = { id?:string; reviewStatus?:"unreviewed"|"reviewed"; type:"opportunity"|"threat"|"trend"; signal:"PENETRATE"|"DEFEND"|"INVEST"|"MONITOR"; summary:string; interpretation:string; investigation:string; confidence:number; evidence:Record<string,string|number|null> };
 const percent=(value:number|null)=>value==null?"N/A":`${value>=0?"+":""}${(value*100).toFixed(1)}%`;
 
 export function synthesiseInsights(data:AnalyticsResult):GroundedInsight[] {

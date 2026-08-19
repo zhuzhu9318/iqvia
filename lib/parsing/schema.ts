@@ -47,3 +47,15 @@ export function detectColumn(header: string): DetectedColumn {
 }
 
 export function detectSchema(headers: string[]) { return headers.map(detectColumn); }
+
+export function detectHeaderRow(rows: unknown[][]) {
+  let bestIndex=0; let bestScore=-1;
+  rows.slice(0,30).forEach((row,index)=>{
+    const values=row.map((value)=>String(value??"").trim()).filter(Boolean);
+    const stringCount=values.filter((value)=>Number.isNaN(Number(value))).length;
+    const semanticCount=values.filter((value)=>detectColumn(value).role!=="unknown").length;
+    const score=values.length+stringCount*.4+semanticCount*4-new Set(values).size*.05;
+    if(values.length>=2&&score>bestScore){bestScore=score;bestIndex=index;}
+  });
+  return bestIndex;
+}

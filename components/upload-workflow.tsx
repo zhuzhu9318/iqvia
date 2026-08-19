@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import * as XLSX from "xlsx";
-import { COLUMN_ROLES, detectSchema, type DetectedColumn } from "@/lib/parsing/schema";
+import { COLUMN_ROLES, detectHeaderRow, detectSchema, type DetectedColumn } from "@/lib/parsing/schema";
 import { createDataset, deleteDataset, listDatasets, saveMappings, type DatasetSummary } from "@/lib/data/datasets";
 import { normaliseDataset } from "@/lib/data/normalise";
 import { SetupWorkflow } from "./setup-workflow";
@@ -32,11 +32,13 @@ export function UploadWorkflow() {
       const workbook = XLSX.read(await selected.arrayBuffer(), { type: "array" });
       const sheetName = workbook.SheetNames.find((name) => XLSX.utils.sheet_to_json(workbook.Sheets[name], { header: 1 }).length > 1);
       if (!sheetName) throw new Error("No worksheet with a usable table was found.");
-      const parsed = XLSX.utils.sheet_to_json<Row>(workbook.Sheets[sheetName], { defval: null, raw: true });
+      const rawRows=XLSX.utils.sheet_to_json<unknown[]>(workbook.Sheets[sheetName],{header:1,defval:null,raw:true});
+      const headerRow=detectHeaderRow(rawRows);
+      const parsed = XLSX.utils.sheet_to_json<Row>(workbook.Sheets[sheetName], { range:headerRow, defval: null, raw: true });
       if (!parsed.length) throw new Error("The selected worksheet has headers but no data rows.");
       const headers = Object.keys(parsed[0]);
       setFile(selected); setRows(parsed); setColumns(detectSchema(headers));
-      setMessage(`Detected ${headers.length} columns and ${parsed.length.toLocaleString()} rows in ${sheetName}.`);
+      setMessage(`Detected header row ${headerRow+1}, ${headers.length} columns and ${parsed.length.toLocaleString()} rows in ${sheetName}.`);
     } catch (error) { setMessage(error instanceof Error ? error.message : "Workbook parsing failed."); }
     finally { setBusy(false); }
   }
